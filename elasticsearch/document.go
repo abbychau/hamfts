@@ -1,6 +1,15 @@
 package hamfts
 
-import "time"
+import (
+	"encoding/gob"
+	"time"
+)
+
+func init() {
+	// Register types for gob encoding
+	gob.Register(map[string]interface{}{})
+	gob.Register(time.Time{})
+}
 
 type Document struct {
 	ID        string
