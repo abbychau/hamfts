@@ -202,7 +202,40 @@ func (idx *Index) DeleteDocument(id string) error {
 	return idx.saveMetadata()
 }
 
-func (idx *Index) Search(query string) ([]*Document, error) {
+func (idx *Index) PatternSearch(pattern string) ([]*Document, error) {
+	idx.mutex.RLock()
+	defer idx.mutex.RUnlock()
+
+	pattern = strings.ToLower(strings.Trim(pattern, ",.!? \t\n\r"))
+	if pattern == "" {
+		return nil, nil
+	}
+
+	// Don't trim asterisks from the pattern here
+	positions := make(map[int64]struct{})
+	for word, wordPositions := range idx.metadata.IndexEntries {
+
+		if strings.Contains(word, pattern) {
+			for _, pos := range wordPositions {
+				positions[pos] = struct{}{}
+			}
+		}
+	}
+
+	// ...rest of existing PatternSearch code...
+	docs := make([]*Document, 0, len(positions))
+	for pos := range positions {
+		doc, err := idx.readDocumentAt(pos)
+		if err != nil {
+			return nil, err
+		}
+		docs = append(docs, doc)
+	}
+
+	return docs, nil
+}
+
+func (idx *Index) Search(query string, containsMode bool) ([]*Document, error) {
 	idx.mutex.RLock()
 	defer idx.mutex.RUnlock()
 
@@ -211,6 +244,12 @@ func (idx *Index) Search(query string) ([]*Document, error) {
 		return nil, nil
 	}
 
+	lastWord := words[len(words)-1]
+	if containsMode {
+		return idx.PatternSearch(lastWord)
+	}
+
+	// Regular search continues...
 	// Get positions for all words
 	wordPositions := make([]map[int64]struct{}, len(words))
 	for i, word := range words {

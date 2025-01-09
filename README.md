@@ -66,49 +66,6 @@ doc.Metadata["category"] = "animals"
 idx.AddDocument(doc)
 ```
 
+// ...existing code...
+
 ### Searching Documents
-
-```go
-// Simple search
-results := idx.Search("quick fox")
-for _, doc := range results {
-    fmt.Printf("Found document: %s\n", doc.ID)
-}
-```
-
-### Managing Documents
-
-```go
-// Retrieve a document by ID
-doc := idx.GetDocument("1")
-
-// Delete a document
-idx.DeleteDocument("1")
-```
-
-## Document Structure
-
-Each document contains:
-- Unique ID
-- Content text
-- Creation timestamp
-- Custom metadata map
-
-## Thread Safety
-
-All operations are thread-safe, protected by read-write mutex locks.
-
-## Limitations
-
-- Basic text search (no advanced query operations)
-- In-memory storage only
-- No scoring or ranking
-- Simple word tokenization
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!
-
-## License
-
-MIT License

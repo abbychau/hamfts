@@ -40,7 +40,7 @@ func TestHamfts(t *testing.T) {
 	}
 
 	// Search for documents
-	results, err := idx.Search("lazy")
+	results, err := idx.Search("lazy", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestHamfts(t *testing.T) {
 		t.Errorf("Expected 2 results, got %d", len(results))
 	}
 
-	results, err = idx.Search("quick fox")
+	results, err = idx.Search("quick fox", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestHamfts(t *testing.T) {
 	if err := idx.DeleteDocument("1"); err != nil {
 		t.Fatal(err)
 	}
-	results, err = idx.Search("quick")
+	results, err = idx.Search("quick", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func TestBulkOperations(t *testing.T) {
 	}
 
 	// Test search after bulk addition
-	results, err := idx.Search("common words")
+	results, err := idx.Search("common words", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,5 +199,53 @@ func TestBulkOperations(t *testing.T) {
 	stats := idx.GetStats()
 	if stats["documentCount"] != 50 {
 		t.Errorf("Expected 50 documents after compaction, got %d", stats["documentCount"])
+	}
+}
+
+func TestWildcardSearch(t *testing.T) {
+	testDir, err := os.MkdirTemp("", "hamfts_test_wildcard")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(testDir)
+
+	idx, err := NewIndex(testDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer idx.Close()
+
+	// Add test documents
+	docs := []*Document{
+		NewDocument("1", "testing prefix search"),
+		NewDocument("2", "test another document"),
+		NewDocument("3", "something different"),
+		NewDocument("4", "tested functionality"),
+		NewDocument("5", "contest the best"),
+	}
+
+	for _, doc := range docs {
+		if err := idx.AddDocument(doc); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Test different wildcard patterns
+	tests := []struct {
+		query string
+		want  int
+	}{
+		{"test", 4}, // test, tested, contest, testing
+	}
+
+	for _, tt := range tests {
+		results, err := idx.Search(tt.query, true)
+		if err != nil {
+			t.Errorf("Search(%q) error: %v", tt.query, err)
+			continue
+		}
+		if got := len(results); got != tt.want {
+			t.Errorf("Search(%q) got %d results, want %d", tt.query, got, tt.want)
+		}
 	}
 }

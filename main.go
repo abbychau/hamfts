@@ -10,7 +10,8 @@ import (
 )
 
 type SearchRequest struct {
-	Query string `json:"query"`
+	Query        string `json:"query"`
+	ContainsMode bool   `json:"containsMode,omitempty"`
 }
 
 type DocumentRequest struct {
@@ -40,7 +41,7 @@ func main() {
 			return
 		}
 
-		results, err := idx.Search(req.Query)
+		results, err := idx.Search(req.Query, req.ContainsMode)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
